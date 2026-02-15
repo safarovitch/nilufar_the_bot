@@ -8,96 +8,140 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class MusicSearchService
 {
-    protected $ytDlpPath;
+    protected $api;
 
     public function __construct()
     {
-        $this->ytDlpPath = base_path('storage/bin/yt-dlp');
+        // Initialize Yandex Music API client
+        $this->api = new \YandexMusic\Client();
     }
 
     /**
-     * Search for music using external providers (e.g., YouTube).
+     * Get track details by ID (Yandex composite ID or other)
+     */
+    public function getTrackDetails(string $id): ?array
+    {
+        if (str_starts_with($id, 'ya:')) {
+            // Parse ya:albumId:trackId
+            $parts = explode(':', $id);
+            if (count($parts) >= 3) {
+                $trackId = $parts[2];
+                $albumId = $parts[1];
+
+                try {
+                    $track = $this->api->getTrack($trackId);
+                    if ($track) {
+                        // Some API clients return array of tracks even for single get
+                        if (is_array($track)) $track = $track[0];
+
+                        // Determine artist name
+                        $artists = [];
+                        if (isset($track->artists)) {
+                            foreach ($track->artists as $artist) {
+                                $artists[] = $artist->name;
+                            }
+                        }
+                        $artistName = !empty($artists) ? implode(', ', $artists) : 'Unknown Artist';
+
+                        $webpageUrl = "https://music.yandex.ru/album/{$albumId}/track/{$trackId}";
+
+                        return [
+                            'id' => $id,
+                            'title' => $track->title,
+                            'duration' => $track->durationMs / 1000,
+                            'uploader' => $artistName,
+                            'webpage_url' => $webpageUrl,
+                            'source' => 'yandex_music'
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Yandex getTrack error: " . $e->getMessage());
+                }
+            }
+        }
+
+        // Fallback or generic ID (maybe YouTube) - simplistic fallback
+        return [
+            'id' => $id,
+            'title' => 'Unknown Title',
+            'uploader' => 'Unknown Artist',
+            'duration' => 0
+        ];
+    }
+
+    /**
+     * Search for music using Yandex Music.
      *
      * @param string $query
      * @return array
      */
     public function search(string $query): array
     {
-        // ytsearch5: limits to 5 results
-        // --dump-json: outputs JSON for each result (line by line)
-        // --flat-playlist: faster, doesn't resolve every video detail if not needed, 
-        // but for search results we usually want title/duration. 
-        // flat-playlist with dump-json on search might return limited info.
-        // Let's try without flat-playlist or with check. 
-        // Actually for "ytsearchN:", it returns a playlist structure if we use dump-single-json,
-        // or multiple json objects if we use dump-json.
-        // safer: --dump-json --no-playlist --flat-playlist is for playlists. 
-        // For search, we want the video entries.
-
-        $command = [
-            $this->ytDlpPath,
-            "ytsearch5:$query",
-            '--dump-json',
-            '--ignore-errors', // Skip errors
-            '--js-runtimes', // Explicitly use node
-            'node',
-        ];
-
-        // Add cookies if available
-        $storageCookiesPath = storage_path('app/cookies.txt');
-        $rootCookiesPath = base_path('cookies.txt');
-
-        $cookiesPath = null;
-        if (file_exists($storageCookiesPath)) {
-            $cookiesPath = $storageCookiesPath;
-        } elseif (file_exists($rootCookiesPath)) {
-            $cookiesPath = $rootCookiesPath;
-        }
-
-        if ($cookiesPath) {
-            Log::info("MusicSearchService: Cookies found at $cookiesPath");
-            array_splice($command, 1, 0, ['--cookies', $cookiesPath]);
-        } else {
-            Log::warning("MusicSearchService: Cookies file NOT found at $storageCookiesPath or $rootCookiesPath");
-        }
-
-        // Add User Agent
-        array_splice($command, 1, 0, ['--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36']);
-
-        Log::info('MusicSearchService executing command: ' . implode(' ', $command));
+        Log::info("MusicSearchService: Searching Yandex Music for '$query'");
 
         try {
-            $process = new Process($command);
-            $process->setTimeout(60);
-            $process->run();
+            // Search for tracks
+            $searchResult = $this->api->search($query);
 
-            if (!$process->isSuccessful()) {
-                Log::error('yt-dlp search failed', ['output' => $process->getErrorOutput()]);
-                return [];
+            // Check if we have results
+            if (!$searchResult || !isset($searchResult->best) || !isset($searchResult->best->result)) {
+                // Fallback to tracks list if 'best' is not a track or missing
+                if (isset($searchResult->tracks) && isset($searchResult->tracks->results)) {
+                    $tracks = array_slice($searchResult->tracks->results, 0, 5);
+                } else {
+                    Log::warning("MusicSearchService: No results found for '$query'");
+                    return [];
+                }
+            } else {
+                // If 'best' match is a track, put it first, then add others
+                $best = $searchResult->best->result;
+                $tracks = [$best];
+
+                if (isset($searchResult->tracks) && isset($searchResult->tracks->results)) {
+                    $moreTracks = array_slice($searchResult->tracks->results, 0, 4);
+                    $tracks = array_merge($tracks, $moreTracks);
+                }
             }
 
-            $output = $process->getOutput();
             $results = [];
 
-            // yt-dlp outputs one JSON object per line for multiple results
-            $lines = explode("\n", trim($output));
+            foreach ($tracks as $track) {
+                // Determine artist name
+                $artists = [];
+                if (isset($track->artists)) {
+                    foreach ($track->artists as $artist) {
+                        $artists[] = $artist->name;
+                    }
+                }
+                $artistName = !empty($artists) ? implode(', ', $artists) : 'Unknown Artist';
 
-            foreach ($lines as $line) {
-                $data = json_decode($line, true);
-                if ($data) {
+                // Yandex Music Track ID
+                $trackId = $track->id;
+
+                // Construct a URL that yt-dlp can handle
+                // yt-dlp supports https://music.yandex.ru/album/{albumId}/track/{trackId}
+                $albumId = isset($track->albums[0]) ? $track->albums[0]->id : null;
+
+                if ($trackId && $albumId) {
+                    $webpageUrl = "https://music.yandex.ru/album/{$albumId}/track/{$trackId}";
+                    // Composite ID for callback data (limit 64 chars)
+                    // Format: yandex:albumId:trackId
+                    $compositeId = "ya:{$albumId}:{$trackId}";
+
                     $results[] = [
-                        'id' => $data['id'] ?? null,
-                        'title' => $data['title'] ?? 'Unknown Title',
-                        'duration' => $data['duration'] ?? 0,
-                        'uploader' => $data['uploader'] ?? 'Unknown Artist',
-                        'webpage_url' => $data['webpage_url'] ?? null,
+                        'id' => $compositeId,
+                        'title' => $track->title,
+                        'duration' => $track->durationMs / 1000, // Duration is in ms
+                        'uploader' => $artistName,
+                        'webpage_url' => $webpageUrl,
+                        'source' => 'yandex_music'
                     ];
                 }
             }
 
             return $results;
         } catch (\Exception $e) {
-            Log::error('MusicSearchService Error: ' . $e->getMessage());
+            Log::error('MusicSearchService Yandex Error: ' . $e->getMessage());
             return [];
         }
     }

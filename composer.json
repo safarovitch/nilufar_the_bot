@@ -17,7 +17,8 @@
         "laravel/socialite": "^5.24",
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
-        "socialiteproviders/yandex": "^4.1"
+        "socialiteproviders/yandex": "^4.1",
+        "stounhandj/yandex-music-api": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

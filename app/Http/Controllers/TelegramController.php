@@ -55,10 +55,8 @@ class TelegramController extends Controller
                 try {
                     // Fetch basic info (should be fast if cached or single video lookup)
                     // searching by ID usually works for yt-dlp `ytsearch1:ID` or just ID
-                    $results = $service->search($videoId); // This was designed for general query.
-                    // Ideally we need `getVideoDetails($id)`.
-                    // Let's assume search finds it or we create a helper.
-                    $track = $results[0] ?? ['id' => $videoId, 'title' => 'Unknown Title', 'artist' => 'Unknown Artist'];
+                    // Fetch basic info
+                    $track = $service->getTrackDetails($videoId) ?? ['id' => $videoId, 'title' => 'Unknown Title', 'artist' => 'Unknown Artist'];
 
                     $queueService = app(\App\Services\QueueService::class);
                     $queueService->addToQueue($chatId, [

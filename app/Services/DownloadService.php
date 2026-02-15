@@ -22,11 +22,32 @@ class DownloadService
      * @param string $id YouTube Video ID
      * @return string|null Path to the downloaded file
      */
-    public function download(string $id): ?string
+    public function download(string $idOrUrl): ?string
     {
-        $url = "https://www.youtube.com/watch?v=$id";
+        // Detect if input is already a URL (Yandex) or a YouTube ID
+        if (filter_var($idOrUrl, FILTER_VALIDATE_URL)) {
+            $url = $idOrUrl;
+            // Use a hash of the URL or extract ID for filename to avoid filesystem issues
+            $fileId = md5($url);
+        } elseif (str_starts_with($idOrUrl, 'ya:')) {
+            // Handle composite Yandex ID: ya:albumId:trackId
+            $parts = explode(':', $idOrUrl);
+            if (count($parts) === 3) {
+                $albumId = $parts[1];
+                $trackId = $parts[2];
+                $url = "https://music.yandex.ru/album/{$albumId}/track/{$trackId}";
+                // Use the input ID as fileId (sanitized) or hash it
+                $fileId = "yandex_{$trackId}";
+            } else {
+                Log::error("Invalid Yandex ID format: $idOrUrl");
+                return null;
+            }
+        } else {
+            $url = "https://www.youtube.com/watch?v=$idOrUrl";
+            $fileId = $idOrUrl;
+        }
 
-        // Define output path pattern. 
+        // Define output path pattern.
         // We'll store in storage/app/music
         $outputDir = storage_path('app/music');
         if (!file_exists($outputDir)) {
@@ -83,7 +104,7 @@ class DownloadService
             }
 
             // Path to the downloaded file (assuming mp3 format)
-            $filePath = "$outputDir/$id.mp3";
+            $filePath = "$outputDir/$fileId.mp3";
 
             if (file_exists($filePath)) {
                 return $filePath;

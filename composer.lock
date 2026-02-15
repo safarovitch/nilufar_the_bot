@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "51aff79b3c1ceaf33e2c27108690e5ad",
+    "content-hash": "ce178e55159d9c3b95662843ae1cdcde",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -4388,6 +4388,46 @@
                 "source": "https://github.com/SocialiteProviders/Yandex/tree/4.1.0"
             },
             "time": "2020-12-01T23:10:59+00:00"
+        },
+        {
+            "name": "stounhandj/yandex-music-api",
+            "version": "v0.5.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/StounhandJ/yandex-music-api.git",
+                "reference": "d513fb479b57cf2ef278ea2bcc87b0e1628a2e52"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/StounhandJ/yandex-music-api/zipball/d513fb479b57cf2ef278ea2bcc87b0e1628a2e52",
+                "reference": "d513fb479b57cf2ef278ea2bcc87b0e1628a2e52",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-simplexml": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "StounhandJ\\YandexMusicApi\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "StounhandJ",
+                    "email": "rmarinicev@gmail.com"
+                }
+            ],
+            "support": {
+                "issues": "https://github.com/StounhandJ/yandex-music-api/issues",
+                "source": "https://github.com/StounhandJ/yandex-music-api/tree/v0.5.2.1"
+            },
+            "time": "2022-06-27T13:35:18+00:00"
         },
         {
             "name": "symfony/clock",

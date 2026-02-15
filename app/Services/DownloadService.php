@@ -52,12 +52,21 @@ class DownloadService
         ];
 
         // Add cookies if available
-        $cookiesPath = storage_path('app/cookies.txt');
-        if (file_exists($cookiesPath)) {
+        $storageCookiesPath = storage_path('app/cookies.txt');
+        $rootCookiesPath = base_path('cookies.txt');
+
+        $cookiesPath = null;
+        if (file_exists($storageCookiesPath)) {
+            $cookiesPath = $storageCookiesPath;
+        } elseif (file_exists($rootCookiesPath)) {
+            $cookiesPath = $rootCookiesPath;
+        }
+
+        if ($cookiesPath) {
             Log::info("DownloadService: Cookies found at $cookiesPath");
             array_splice($command, 1, 0, ['--cookies', $cookiesPath]);
         } else {
-            Log::warning("DownloadService: Cookies file NOT found at $cookiesPath");
+            Log::warning("DownloadService: Cookies file NOT found at $storageCookiesPath or $rootCookiesPath");
         }
 
         // Add User Agent

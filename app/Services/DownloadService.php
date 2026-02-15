@@ -49,6 +49,15 @@ class DownloadService
             $url
         ];
 
+        // Add cookies if available
+        $cookiesPath = storage_path('app/cookies.txt');
+        if (file_exists($cookiesPath)) {
+            array_splice($command, 1, 0, ['--cookies', $cookiesPath]);
+        }
+
+        // Add User Agent
+        array_splice($command, 1, 0, ['--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36']);
+
         try {
             $process = new Process($command);
             $process->setTimeout(300); // 5 minutes max download

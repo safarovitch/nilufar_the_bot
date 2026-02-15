@@ -12,7 +12,7 @@ Route::get('/', function () {
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
-});
+})->name('home');
 
 Route::middleware([
     'auth:sanctum',
@@ -22,6 +22,19 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
+
+    Route::get('/settings/profile', [App\Http\Controllers\Settings\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/settings/profile', [App\Http\Controllers\Settings\ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/settings/profile', [App\Http\Controllers\Settings\ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/settings/password', [App\Http\Controllers\Settings\PasswordController::class, 'edit'])->name('user-password.edit');
+    Route::put('/settings/password', [App\Http\Controllers\Settings\PasswordController::class, 'update'])->name('user-password.update');
+
+    Route::get('/settings/two-factor', [App\Http\Controllers\Settings\TwoFactorAuthenticationController::class, 'show'])->name('two-factor.show');
+
+    Route::get('/settings/appearance', function () {
+        return Inertia::render('settings/Appearance');
+    })->name('appearance.edit');
 });
 
 // Social Auth Routes

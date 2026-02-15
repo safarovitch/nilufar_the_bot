@@ -46,6 +46,8 @@ class DownloadService
             '-o',
             $outputTemplate,
             '--no-playlist',
+            '--js-runtimes',
+            'node',
             $url
         ];
 

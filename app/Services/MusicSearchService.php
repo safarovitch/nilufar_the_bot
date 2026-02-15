@@ -38,8 +38,9 @@ class MusicSearchService
             $this->ytDlpPath,
             "ytsearch5:$query",
             '--dump-json',
-            '--no-playlist', // Ensure we handle them as videos
             '--ignore-errors', // Skip errors
+            '--js-runtimes', // Explicitly use node
+            'node',
         ];
 
         // Add cookies if available

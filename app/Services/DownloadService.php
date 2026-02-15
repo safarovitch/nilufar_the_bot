@@ -52,7 +52,10 @@ class DownloadService
         // Add cookies if available
         $cookiesPath = storage_path('app/cookies.txt');
         if (file_exists($cookiesPath)) {
+            Log::info("DownloadService: Cookies found at $cookiesPath");
             array_splice($command, 1, 0, ['--cookies', $cookiesPath]);
+        } else {
+            Log::warning("DownloadService: Cookies file NOT found at $cookiesPath");
         }
 
         // Add User Agent

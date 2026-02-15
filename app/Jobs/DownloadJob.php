@@ -15,8 +15,8 @@ class DownloadJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $chatId;
-    protected $videoId;
+    public $chatId;
+    public $videoId;
     protected $downloadService;
 
     /**
@@ -49,10 +49,16 @@ class DownloadJob implements ShouldQueue
             if ($filePath && file_exists($filePath)) {
                 Log::info("Download complete: $filePath. Sending to Telegram...");
 
+                $keyboard = \Telegram\Bot\Keyboard\Keyboard::make()->inline()
+                    ->row([
+                        \Telegram\Bot\Keyboard\Keyboard::inlineButton(['text' => '⏭ Next Track', 'callback_data' => 'next'])
+                    ]);
+
                 Telegram::sendAudio([
                     'chat_id' => $this->chatId,
                     'audio' => \Telegram\Bot\FileUpload\InputFile::create($filePath),
                     'caption' => 'Here is your track!',
+                    'reply_markup' => $keyboard,
                 ]);
 
                 // Log to history
@@ -63,9 +69,6 @@ class DownloadJob implements ShouldQueue
                     'title' => 'Unknown Title', // determined by download or passed in construction
                     'artist' => 'Unknown Artist',
                 ]);
-
-                // Cleanup
-                unlink($filePath);
             } else {
                 Telegram::sendMessage([
                     'chat_id' => $this->chatId,
@@ -78,6 +81,12 @@ class DownloadJob implements ShouldQueue
                 'chat_id' => $this->chatId,
                 'text' => 'An error occurred while processing your request.'
             ]);
+        } finally {
+            // Ensure cleanup happens even if exceptions occur (e.g. during sendAudio)
+            if (isset($filePath) && file_exists($filePath)) {
+                Log::info("Cleaning up file: $filePath");
+                @unlink($filePath);
+            }
         }
     }
 }

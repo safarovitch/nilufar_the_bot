@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('playback_queues', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->string('track_url');
+            $table->string('track_source_id');
             $table->string('title')->nullable();
+            $table->string('artist')->nullable();
+            $table->integer('duration')->default(0);
             $table->integer('position')->default(0);
             $table->string('status')->default('pending'); // pending, playing, played
             $table->timestamps();

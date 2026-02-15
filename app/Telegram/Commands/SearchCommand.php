@@ -56,16 +56,24 @@ class SearchCommand extends Command
 
             foreach ($results as $result) {
                 // Callback data: type:video_id
-                // keep it short. d:video_id
-                $callbackData = 'd:' . $result['id'];
+                // d: download immediately
+                // q: add to queue
+                $downloadData = 'd:' . $result['id'];
+                $queueData = 'q:' . $result['id'];
 
                 $buttonText = $result['title'] . ' - ' . $result['uploader'];
-                // Telegram button text limit is essentially UI based, but callback data is 64 bytes.
 
                 $keyboard->row([
                     Keyboard::inlineButton([
-                        'text' => $buttonText,
-                        'callback_data' => $callbackData
+                        'text' => '▶️ ' . $buttonText, // Play icon
+                        'callback_data' => $downloadData
+                    ])
+                ]);
+
+                $keyboard->row([
+                    Keyboard::inlineButton([
+                        'text' => '➕ Add to Queue',
+                        'callback_data' => $queueData
                     ])
                 ]);
             }

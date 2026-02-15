@@ -132,7 +132,9 @@ return [
     'commands' => [
         App\Telegram\Commands\StartCommand::class,
         App\Telegram\Commands\SearchCommand::class,
-        HelpCommand::class,
+        App\Telegram\Commands\LoginCommand::class,
+        App\Telegram\Commands\NextCommand::class,
+        Telegram\Bot\Commands\HelpCommand::class,
     ],
 
     /*

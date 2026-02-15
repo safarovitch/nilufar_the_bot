@@ -39,7 +39,32 @@ class HistoryService
      */
     public function fetchExternalHistory(int $userId, string $provider): array
     {
-        // Implementation will go here
-        return [];
+        $user = \App\Models\User::find($userId);
+        if (!$user) return [];
+
+        $linkedAccount = $user->linkedAccounts()->where('provider', $provider)->first();
+        if (!$linkedAccount) return [];
+
+        $tracks = [];
+
+        try {
+            if ($provider === 'google') {
+                $service = app(YouTubeService::class);
+                $tracks = $service->fetchHistory($linkedAccount->token);
+            } elseif ($provider === 'yandex') {
+                $service = app(YandexMusicService::class);
+                $tracks = $service->fetchHistory($linkedAccount->token);
+            }
+
+            // Log these tracks
+            foreach ($tracks as $track) {
+                $this->logPlayedTrack($userId, $track);
+            }
+
+            return $tracks;
+        } catch (\Exception $e) {
+            Log::error("Failed to fetch history for $provider: " . $e->getMessage());
+            return [];
+        }
     }
 }

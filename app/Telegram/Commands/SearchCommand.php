@@ -22,8 +22,15 @@ class SearchCommand extends Command
 
     public function handle()
     {
-        $arguments = $this->getArguments();
-        $query = $arguments['query'] ?? null;
+        // Get all arguments as a single string
+        $update = $this->getUpdate();
+        $message = $update->getMessage();
+        $text = $message->getText();
+
+        // Remove the command (/search) from the text
+        $query = trim(str_replace('/search', '', $text));
+
+        Log::info("SearchCommand triggered by user {$message->getFrom()->getId()} with query: '{$query}'");
 
         if (empty($query)) {
             $this->replyWithMessage([

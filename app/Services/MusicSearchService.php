@@ -42,6 +42,8 @@ class MusicSearchService
             '--ignore-errors', // Skip errors
         ];
 
+        Log::info('MusicSearchService executing command: ' . implode(' ', $command));
+
         try {
             $process = new Process($command);
             $process->setTimeout(60);

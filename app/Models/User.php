@@ -63,4 +63,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(LinkedAccount::class);
     }
+
+    public function getProfilePhotoUrlAttribute()
+    {
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
+    }
 }

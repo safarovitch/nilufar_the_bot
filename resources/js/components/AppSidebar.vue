@@ -23,6 +23,11 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: 'Admin',
+        href: '/admin', // Direct link for now, or use named route if available in wayfinder
+        icon: Folder, 
+    }
 ];
 
 const footerNavItems: NavItem[] = [

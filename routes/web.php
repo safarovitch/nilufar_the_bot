@@ -40,3 +40,8 @@ Route::middleware([
 // Social Auth Routes
 Route::get('/auth/{provider}', [AuthController::class, 'redirectToProvider'])->where('provider', 'google|yandex')->name('social.auth');
 Route::get('/auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->where('provider', 'google|yandex');
+
+// Admin Routes
+Route::middleware(['auth'])->prefix('admin')->group(function () {
+    Route::get('/', [App\Http\Controllers\AdminController::class, 'index'])->name('admin.dashboard');
+});
